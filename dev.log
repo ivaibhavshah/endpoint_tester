@@ -1,0 +1,402 @@
+
+> curl-perf@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.201.0.67:3000
+✓ Ready in 2.4s
+
+ GET / 200 in 545ms (next.js: 329ms, application-code: 216ms)
+ POST /api/test 200 in 15.0s (next.js: 613ms, application-code: 14.4s)
+ POST /api/test 200 in 482ms (next.js: 16ms, application-code: 466ms)
+ GET / 200 in 103ms (next.js: 16ms, application-code: 88ms)
+ GET / 200 in 78ms (next.js: 11ms, application-code: 67ms)
+ POST /api/test 200 in 14ms (next.js: 6ms, application-code: 9ms)
+ POST /api/test 200 in 310ms (next.js: 3ms, application-code: 307ms)
+✓ Compiled in 158ms
+ GET / 200 in 339ms (next.js: 232ms, application-code: 107ms)
+ GET / 200 in 46ms (next.js: 11ms, application-code: 35ms)
+✓ Compiled in 136ms
+ GET / 200 in 403ms (next.js: 217ms, application-code: 186ms)
+ GET / 200 in 79ms (next.js: 14ms, application-code: 65ms)
+✓ Compiled in 134ms
+ GET / 200 in 372ms (next.js: 210ms, application-code: 162ms)
+ GET / 200 in 96ms (next.js: 19ms, application-code: 77ms)
+✓ Compiled in 125ms
+ GET / 200 in 668ms (next.js: 219ms, application-code: 449ms)
+ GET / 200 in 349ms (next.js: 252ms, application-code: 97ms)
+ POST /api/test 200 in 1140ms (next.js: 173ms, application-code: 967ms)
+ POST /api/test 200 in 1193ms (next.js: 320ms, application-code: 873ms)
+ POST /api/test 200 in 649ms (next.js: 4ms, application-code: 645ms)
+ GET / 200 in 210ms (next.js: 12ms, application-code: 198ms)
+ POST /api/test 200 in 512ms (next.js: 17ms, application-code: 495ms)
+ POST /api/test 200 in 366ms (next.js: 3ms, application-code: 363ms)
+ POST /api/test 200 in 183ms (next.js: 4ms, application-code: 180ms)
+ GET / 200 in 58ms (next.js: 10ms, application-code: 48ms)
+ POST /api/test 200 in 832ms (next.js: 6ms, application-code: 826ms)
+ POST /api/test 200 in 647ms (next.js: 3ms, application-code: 644ms)
+ POST /api/test 200 in 5.9s (next.js: 5ms, application-code: 5.9s)
+✓ Compiled in 123ms
+ GET / 200 in 203ms (next.js: 122ms, application-code: 82ms)
+ GET / 200 in 63ms (next.js: 6ms, application-code: 57ms)
+[browser] Uncaught ReferenceError: useRef is not defined
+    at Home (app/page.tsx:226:22)
+  224 |   const [runs, setRuns] = useState(1);
+  225 |   const [loading, setLoading] = useState(false);
+> 226 |   const hasAutoRun = useRef(false);
+      |                      ^
+  227 |   const [error, setError] = useState<string | null>(null);
+  228 |   const [data, setData] = useState<TestResponseData | null>(null);
+  229 |   const [activeTab, setActiveTab] = useState<Tab>('timing');
+✓ Compiled in 142ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: DEFAULT_CURL is not defined
+    at Home (app\page.tsx:225:46)
+  223 |
+  224 | export default function Home() {
+> 225 |   const [curlInput, setCurlInput] = useState(DEFAULT_CURL);
+      |                                              ^
+  226 |   const [runs, setRuns] = useState(1);
+  227 |   const [loading, setLoading] = useState(false);
+  228 |   const hasAutoRun = useRef(false); {
+  digest: '107542703'
+}
+[browser] Uncaught ReferenceError: DEFAULT_CURL is not defined
+    at Home (app/page.tsx:225:46)
+    at Set.forEach (<anonymous>)
+  223 |
+  224 | export default function Home() {
+> 225 |   const [curlInput, setCurlInput] = useState(DEFAULT_CURL);
+      |                                              ^
+  226 |   const [runs, setRuns] = useState(1);
+  227 |   const [loading, setLoading] = useState(false);
+  228 |   const hasAutoRun = useRef(false);
+ GET / 500 in 643ms (next.js: 318ms, application-code: 325ms)
+[browser] Uncaught ReferenceError: DEFAULT_CURL is not defined
+    at Home (app/page.tsx:225:46)
+  223 |
+  224 | export default function Home() {
+> 225 |   const [curlInput, setCurlInput] = useState(DEFAULT_CURL);
+      |                                              ^
+  226 |   const [runs, setRuns] = useState(1);
+  227 |   const [loading, setLoading] = useState(false);
+  228 |   const hasAutoRun = useRef(false);
+✓ Compiled in 153ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 623ms (next.js: 359ms, application-code: 264ms)
+[browser] Uncaught ReferenceError: hasAutoRun is not defined
+    at Home.useEffect (app/page.tsx:269:5)
+  267 |
+  268 |   useEffect(() => {
+> 269 |     if (!hasAutoRun.current) {
+      |     ^
+  270 |       hasAutoRun.current = true;
+  271 |       runTest();
+  272 |     }
+✓ Compiled in 134ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 450ms (next.js: 246ms, application-code: 204ms)
+ POST /api/test 200 in 291ms (next.js: 139ms, application-code: 152ms)
+✓ Compiled in 209ms
+ GET / 200 in 366ms (next.js: 243ms, application-code: 123ms)
+ POST /api/test 200 in 169ms (next.js: 56ms, application-code: 113ms)
+ POST /api/test 200 in 50ms (next.js: 3ms, application-code: 47ms)
+ POST /api/test 200 in 50ms (next.js: 4ms, application-code: 46ms)
+ POST /api/test 200 in 48ms (next.js: 4ms, application-code: 44ms)
+ POST /api/test 200 in 50ms (next.js: 4ms, application-code: 46ms)
+ POST /api/test 200 in 48ms (next.js: 3ms, application-code: 46ms)
+ POST /api/test 200 in 75ms (next.js: 3ms, application-code: 72ms)
+ POST /api/test 200 in 52ms (next.js: 5ms, application-code: 47ms)
+ POST /api/test 200 in 51ms (next.js: 4ms, application-code: 47ms)
+ POST /api/test 200 in 80ms (next.js: 3ms, application-code: 76ms)
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ POST /api/test 200 in 48ms (next.js: 4ms, application-code: 45ms)
+ POST /api/test 200 in 78ms (next.js: 3ms, application-code: 74ms)
+ POST /api/test 200 in 51ms (next.js: 3ms, application-code: 48ms)
+ POST /api/test 200 in 47ms (next.js: 3ms, application-code: 44ms)
+ POST /api/test 200 in 53ms (next.js: 4ms, application-code: 50ms)
+ POST /api/test 200 in 302ms (next.js: 3ms, application-code: 299ms)
+ POST /api/test 200 in 12.0s (next.js: 4ms, application-code: 12.0s)
+ GET / 200 in 131ms (next.js: 5ms, application-code: 126ms)
+ POST /api/test 200 in 976ms (next.js: 7ms, application-code: 969ms)
+ POST /api/test 200 in 2.7s (next.js: 3ms, application-code: 2.7s)
+ POST /api/test 200 in 18.2s (next.js: 4ms, application-code: 18.2s)
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ POST /api/test 200 in 19.8s (next.js: 7ms, application-code: 19.8s)
+ GET / 200 in 361ms (next.js: 237ms, application-code: 125ms)
+ GET / 200 in 194ms (next.js: 111ms, application-code: 83ms)
+ GET / 200 in 190ms (next.js: 150ms, application-code: 41ms)
+ GET / 200 in 139ms (next.js: 26ms, application-code: 113ms)
+ GET / 200 in 58ms (next.js: 9ms, application-code: 49ms)
+ GET / 200 in 60ms (next.js: 6ms, application-code: 54ms)
+ GET / 200 in 237ms (next.js: 155ms, application-code: 82ms)
+ GET / 200 in 207ms (next.js: 10ms, application-code: 197ms)
+ GET / 200 in 644ms (next.js: 29ms, application-code: 615ms)
+ GET / 200 in 73ms (next.js: 13ms, application-code: 60ms)
+ GET / 200 in 259ms (next.js: 161ms, application-code: 98ms)
+✓ Compiled in 94ms
+ GET / 200 in 252ms (next.js: 181ms, application-code: 71ms)
+ POST /api/test 200 in 1103ms (next.js: 177ms, application-code: 927ms)
+✓ Compiled in 73ms
+ GET / 200 in 228ms (next.js: 162ms, application-code: 66ms)
+✓ Compiled in 93ms
+ GET / 200 in 245ms (next.js: 181ms, application-code: 64ms)
+✓ Compiled in 69ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:298:40)
+  296 |       setLoading(false);
+  297 |     }
+> 298 |   }, [curlInput, runs, vus, thinkTime, timeout_]);
+      |                                        ^
+  299 |
+  300 |   useEffect(() => {
+  301 |     const handler = (e: KeyboardEvent) => { {
+  digest: '3700328490'
+}
+ GET / 500 in 372ms (next.js: 146ms, application-code: 226ms)
+✓ Compiled in 159ms
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:298:40)
+  296 |       setLoading(false);
+  297 |     }
+> 298 |   }, [curlInput, runs, vus, thinkTime, timeout_]);
+      |                                        ^
+  299 |
+  300 |   useEffect(() => {
+  301 |     const handler = (e: KeyboardEvent) => { {
+  digest: '1989111948'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 500 in 487ms (next.js: 134ms, application-code: 353ms)
+✓ Compiled in 115ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:298:40)
+  296 |       setLoading(false);
+  297 |     }
+> 298 |   }, [curlInput, runs, vus, thinkTime, timeout_]);
+      |                                        ^
+  299 |
+  300 |   useEffect(() => {
+  301 |     const handler = (e: KeyboardEvent) => { {
+  digest: '1989111948'
+}
+ GET / 500 in 99ms (next.js: 13ms, application-code: 86ms)
+✓ Compiled in 46ms
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:298:40)
+  296 |       setLoading(false);
+  297 |     }
+> 298 |   }, [curlInput, runs, vus, thinkTime, timeout_]);
+      |                                        ^
+  299 |
+  300 |   useEffect(() => {
+  301 |     const handler = (e: KeyboardEvent) => { {
+  digest: '1989111948'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 500 in 283ms (next.js: 155ms, application-code: 128ms)
+✓ Compiled in 72ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:298:40)
+  296 |       setLoading(false);
+  297 |     }
+> 298 |   }, [curlInput, runs, vus, thinkTime, timeout_]);
+      |                                        ^
+  299 |
+  300 |   useEffect(() => {
+  301 |     const handler = (e: KeyboardEvent) => { {
+  digest: '1989111948'
+}
+ GET / 500 in 277ms (next.js: 144ms, application-code: 133ms)
+✓ Compiled in 67ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: timeout_ is not defined
+    at Home (app\page.tsx:359:30)
+  357 |             <div className="field">
+  358 |               <label className="field-label">Timeout</label>
+> 359 |               <select value={timeout_} onChange={e => setTimeout_(parseInt(e.target.value...
+      |                              ^
+  360 |                 <option value="5">5s</option>
+  361 |                 <option value="10">10s</option>
+  362 |                 <option value="30">30s</option> {
+  digest: '1989111948'
+}
+ GET / 500 in 277ms (next.js: 149ms, application-code: 129ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+✓ Compiled in 44ms
+ GET / 200 in 276ms (next.js: 164ms, application-code: 112ms)
+✓ Compiled in 56ms
+ GET / 200 in 181ms (next.js: 131ms, application-code: 50ms)
+✓ Compiled in 65ms
+ GET / 200 in 173ms (next.js: 131ms, application-code: 42ms)
+✓ Compiled in 52ms
+ GET / 200 in 204ms (next.js: 154ms, application-code: 50ms)
+ GET / 200 in 201ms (next.js: 15ms, application-code: 186ms)
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ POST /api/test 200 in 89s (next.js: 73ms, application-code: 89s)
+ GET / 200 in 265ms (next.js: 154ms, application-code: 111ms)
+✓ Compiled in 157ms
+ GET / 200 in 192ms (next.js: 131ms, application-code: 61ms)
+ GET / 200 in 68ms (next.js: 20ms, application-code: 48ms)
+ POST /api/test 200 in 1174ms (next.js: 109ms, application-code: 1065ms)
+✓ Compiled in 98ms
+ GET / 200 in 202ms (next.js: 150ms, application-code: 52ms)
+✓ Compiled in 94ms
+ GET / 200 in 257ms (next.js: 213ms, application-code: 44ms)
+✓ Compiled in 78ms
+ GET / 200 in 168ms (next.js: 124ms, application-code: 44ms)
+✓ Compiled in 49ms
+ GET / 200 in 171ms (next.js: 125ms, application-code: 46ms)
+ POST /api/test 200 in 849ms (next.js: 68ms, application-code: 781ms)
+ POST /api/test 200 in 87s (next.js: 4ms, application-code: 87s)
+✓ Compiled in 142ms
+ GET / 200 in 203ms (next.js: 139ms, application-code: 64ms)
+✓ Compiled in 344ms
+ GET / 200 in 447ms (next.js: 314ms, application-code: 134ms)
+✓ Compiled in 92ms
+ GET / 200 in 161ms (next.js: 119ms, application-code: 42ms)
+✓ Compiled in 96ms
+ GET / 200 in 231ms (next.js: 141ms, application-code: 90ms)
+✓ Compiled in 142ms
+ GET / 200 in 407ms (next.js: 295ms, application-code: 111ms)
+✓ Compiled in 156ms
+✓ Compiled in 78ms
+ GET / 200 in 198ms (next.js: 12ms, application-code: 185ms)
+ GET / 200 in 64ms (next.js: 6ms, application-code: 58ms)
+ GET / 200 in 48ms (next.js: 8ms, application-code: 40ms)
+ GET / 200 in 125ms (next.js: 15ms, application-code: 110ms)
+ POST /api/test 200 in 1002ms (next.js: 65ms, application-code: 937ms)
+ POST /api/test 200 in 80s (next.js: 4ms, application-code: 80s)
+ POST /api/test 200 in 79s (next.js: 7ms, application-code: 79s)
+ GET / 200 in 282ms (next.js: 197ms, application-code: 85ms)
+✓ Compiled in 817ms
+ GET / 200 in 1157ms (next.js: 877ms, application-code: 280ms)
+✓ Compiled in 480ms
+ GET / 200 in 504ms (next.js: 31ms, application-code: 474ms)
+ GET / 200 in 121ms (next.js: 15ms, application-code: 106ms)
+ GET / 200 in 502ms (next.js: 133ms, application-code: 369ms)
+✓ Compiled in 600ms
+ GET / 200 in 559ms (next.js: 434ms, application-code: 125ms)
+✓ Compiled in 281ms
+ GET / 200 in 320ms (next.js: 227ms, application-code: 93ms)
+✓ Compiled in 152ms
+ GET / 200 in 236ms (next.js: 178ms, application-code: 58ms)
+✓ Compiled in 76ms
+ GET / 200 in 150ms (next.js: 109ms, application-code: 42ms)
+✓ Compiled in 90ms
+ GET / 200 in 217ms (next.js: 164ms, application-code: 54ms)
+ GET / 200 in 161ms (next.js: 108ms, application-code: 52ms)
+ GET / 200 in 186ms (next.js: 128ms, application-code: 57ms)
+✓ Compiled in 609ms
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ POST /api/test 200 in 3.9min (next.js: 61ms, application-code: 3.9min)
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 connect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(node:32536) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 secureConnect listeners added to [TLSSocket]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ POST /api/test 200 in 7.3min (next.js: 764ms, application-code: 7.3min)
+ GET / 200 in 147ms (next.js: 7ms, application-code: 141ms)
+✓ Compiled in 97ms
+ GET / 200 in 291ms (next.js: 214ms, application-code: 77ms)
+✓ Compiled in 89ms
+ GET / 200 in 184ms (next.js: 137ms, application-code: 47ms)
+✓ Compiled in 177ms
