@@ -33,12 +33,16 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 3px; }
 
-.app { display: grid; grid-template-rows: 56px 1fr; height: 100vh; overflow: hidden; }
+.app { display: grid; grid-template-rows: 56px 1fr 32px; height: 100vh; overflow: hidden; }
 
 header { background: var(--s1); border-bottom: 1px solid var(--bd); display: flex; align-items: center; gap: 12px; padding: 0 24px; flex-shrink: 0; }
-.logo { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; }
 .logo span { color: var(--bl); }
 .badge { font-size: 10px; background: var(--s3); color: var(--mu); padding: 2px 8px; border-radius: 20px; border: 1px solid var(--bd); }
+
+.app-footer { background: var(--s1); border-top: 1px solid var(--bd); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--mu); gap: 4px; flex-shrink: 0; }
+.app-footer a { color: var(--bl); text-decoration: none; font-weight: 600; transition: opacity 0.15s; }
+.app-footer a:hover { opacity: 0.75; }
 
 main { display: grid; grid-template-columns: 460px 1fr; overflow: hidden; }
 

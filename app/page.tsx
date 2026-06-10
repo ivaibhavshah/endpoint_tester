@@ -663,8 +663,8 @@ export default function Home() {
   return (
     <div className="app">
       <header>
-        <div className="logo">c<span>URL</span> Perf</div>
-        <div className="badge">HTTP Performance Tester</div>
+        <div className="logo">Endpoint<span>Tester</span></div>
+        <div className="badge">HTTP Performance &amp; Load Testing</div>
       </header>
 
       <main>
@@ -840,6 +840,12 @@ export default function Home() {
           )}
         </div>
       </main>
+      <footer className="app-footer">
+        Developed by{' '}
+        <a href="https://ivaibhavshah.vercel.app" target="_blank" rel="noopener noreferrer">
+          Vaibhav Shah
+        </a>
+      </footer>
     </div>
   );
 }
