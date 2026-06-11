@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { RequestResult, AggregateStats, AuthConfig, AuthType, SuiteRequestResult } from '@/lib/types';
 
 type LiveItem = { result: RequestResult; vuIdx: number; runIdx: number; seq: number; requestIdx: number; requestName: string };
-type RequestEntry = { id: string; name: string; curl: string; method: string; body: string; contentType: string };
-type Tab = 'timing' | 'stats' | 'response' | 'body' | 'request';
+type FormRow = { id: string; key: string; value: string };
+type RequestEntry = { id: string; name: string; curl: string; method: string; body: string; contentType: string; formRows: FormRow[]; headerRows: FormRow[] };
+type Tab = 'timing' | 'stats' | 'response' | 'body' | 'request' | 'runs';
 type ParsedRef = { url: string; method: string; headers: Record<string, string>; body: string | null };
+type HistoryEntry = { id: string; timestamp: number; requests: RequestEntry[]; config: { runs: number; vus: number; thinkTime: number; timeoutSec: number } };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,28 @@ function statusClass(sc: number) {
   if (sc >= 300) return 's-3xx';
   if (sc >= 200) return 's-2xx';
   return 's-err';
+}
+
+// ─── Local storage ────────────────────────────────────────────────────────────
+
+const REQUESTS_KEY = 'curl-perf-requests';
+const HISTORY_KEY  = 'curl-perf-history';
+const MAX_HISTORY  = 30;
+
+function loadStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; }
+  catch { return fallback; }
+}
+function saveStorage(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+function formatRelTime(ts: number): string {
+  const d = Date.now() - ts;
+  if (d < 60_000)     return 'just now';
+  if (d < 3_600_000)  return `${Math.floor(d / 60_000)}m ago`;
+  if (d < 86_400_000) return `${Math.floor(d / 3_600_000)}h ago`;
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // ─── Download helpers ─────────────────────────────────────────────────────────
@@ -83,6 +107,111 @@ function downloadJSON(results: SuiteRequestResult[], opts: object) {
     })),
   };
   triggerDownload(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }), `perf-report-${Date.now()}.json`);
+}
+
+function serializeFormRows(rows: FormRow[]) {
+  return rows.filter(r => r.key.trim()).map(r => `${encodeURIComponent(r.key)}=${encodeURIComponent(r.value)}`).join('&');
+}
+const defaultFormRows = (): FormRow[] => [{ id: 'r1', key: '', value: '' }];
+
+// ─── Excel import / export ────────────────────────────────────────────────────
+
+const EXCEL_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const EXCEL_COLS = [{ wch: 20 }, { wch: 55 }, { wch: 10 }, { wch: 32 }, { wch: 45 }, { wch: 55 }];
+
+function buildExcelRows(requests: RequestEntry[]) {
+  return requests.map(r => ({
+    Name: r.name,
+    Input: r.curl,
+    Method: isUrlMode(r.curl) ? r.method : '',
+    ContentType: isUrlMode(r.curl) ? r.contentType : '',
+    Body: isUrlMode(r.curl)
+      ? (r.contentType === 'application/x-www-form-urlencoded' ? serializeFormRows(r.formRows) : r.body)
+      : '',
+    Headers: isUrlMode(r.curl)
+      ? r.headerRows.filter(h => h.key.trim()).map(h => `${h.key}: ${h.value}`).join(' | ')
+      : '',
+  }));
+}
+
+async function exportRequestsToExcel(requests: RequestEntry[]) {
+  const XLSX = (await import('xlsx')).default;
+  const ws = XLSX.utils.json_to_sheet(buildExcelRows(requests));
+  ws['!cols'] = EXCEL_COLS;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Requests');
+  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  triggerDownload(new Blob([buf], { type: EXCEL_MIME }), `requests-${Date.now()}.xlsx`);
+}
+
+async function downloadSampleExcel() {
+  const XLSX = (await import('xlsx')).default;
+  const sample = [
+    { Name: 'Get Users', Input: 'https://api.example.com/users', Method: 'GET', ContentType: '', Body: '', Headers: 'Authorization: Bearer my-token' },
+    { Name: 'Create User', Input: 'https://api.example.com/users', Method: 'POST', ContentType: 'application/json', Body: '{"name":"John","email":"john@example.com"}', Headers: 'Authorization: Bearer my-token | X-Request-ID: abc123' },
+    { Name: 'Submit Form', Input: 'https://api.example.com/submit', Method: 'POST', ContentType: 'application/x-www-form-urlencoded', Body: 'name=John&email=john%40example.com', Headers: '' },
+    { Name: 'Raw Curl', Input: 'curl https://api.example.com/data -H "Authorization: Bearer token" -d \'{"key":"value"}\'', Method: '', ContentType: '', Body: '', Headers: '' },
+  ];
+  const ws = XLSX.utils.json_to_sheet(sample);
+  ws['!cols'] = EXCEL_COLS;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Requests');
+  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  triggerDownload(new Blob([buf], { type: EXCEL_MIME }), 'sample-requests.xlsx');
+}
+
+async function importRequestsFromExcel(file: File): Promise<RequestEntry[]> {
+  const XLSX = (await import('xlsx')).default;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
+        const entries: RequestEntry[] = rows
+          .filter(row => (row.Input ?? '').trim())
+          .map((row, i) => {
+            const ct = (row.ContentType ?? '').trim();
+            const rawBody = (row.Body ?? '').trim();
+            const rawHeaders = (row.Headers ?? '').trim();
+
+            const headerRows: FormRow[] = rawHeaders
+              ? rawHeaders.split('|').map((h, j) => {
+                  const ci = h.indexOf(':');
+                  return { id: `ih-${i}-${j}`, key: ci >= 0 ? h.slice(0, ci).trim() : h.trim(), value: ci >= 0 ? h.slice(ci + 1).trim() : '' };
+                })
+              : defaultFormRows();
+
+            const formRows: FormRow[] = ct === 'application/x-www-form-urlencoded' && rawBody
+              ? rawBody.split('&').map((pair, j) => {
+                  const ei = pair.indexOf('=');
+                  return {
+                    id: `if-${i}-${j}`,
+                    key: decodeURIComponent(ei >= 0 ? pair.slice(0, ei) : pair),
+                    value: decodeURIComponent(ei >= 0 ? pair.slice(ei + 1) : ''),
+                  };
+                })
+              : defaultFormRows();
+
+            return {
+              id: `imp-${i}-${Date.now()}`,
+              name: (row.Name ?? '').trim(),
+              curl: (row.Input ?? '').trim(),
+              method: (row.Method ?? 'GET').trim() || 'GET',
+              contentType: ct,
+              body: ct !== 'application/x-www-form-urlencoded' ? rawBody : '',
+              headerRows,
+              formRows,
+            };
+          });
+        resolve(entries);
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 // ─── Sub-views ───────────────────────────────────────────────────────────────
@@ -160,7 +289,7 @@ function StatsView({ stats, results }: { stats: AggregateStats; results: Request
         <div className="load-metric"><div className="lm-val" style={{ color: '#3fb950' }}>{stats.successful}</div><div className="lm-label">Success</div></div>
         <div className="load-metric"><div className="lm-val" style={{ color: stats.errorRate > 0 ? '#f85149' : '#3fb950' }}>{stats.errorRate}%</div><div className="lm-label">Error Rate</div></div>
         <div className="load-metric"><div className="lm-val" style={{ color: '#58a6ff' }}>{stats.throughput}</div><div className="lm-label">Req/s</div></div>
-        <div className="load-metric"><div className="lm-val">{stats.vus}</div><div className="lm-label">VUs</div></div>
+        <div className="load-metric"><div className="lm-val">{stats.vus}</div><div className="lm-label">Users</div></div>
         <div className="load-metric"><div className="lm-val">{(stats.totalDuration / 1000).toFixed(2)}s</div><div className="lm-label">Duration</div></div>
       </div>
       {good.length > 0 && (
@@ -359,6 +488,76 @@ function LiveView({ items, total, sort, onToggleSort, showVu, showReq, currentRe
   );
 }
 
+// ─── Form data table ─────────────────────────────────────────────────────────
+
+function FormTable({ rows, onAdd, onRemove, onUpdate, keyPlaceholder = 'key', valuePlaceholder = 'value', minRows = 1 }: {
+  rows: FormRow[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, field: 'key' | 'value', val: string) => void;
+  keyPlaceholder?: string;
+  valuePlaceholder?: string;
+  minRows?: number;
+}) {
+  return (
+    <div className="form-table">
+      <div className="ft-head"><span>Key</span><span>Value</span></div>
+      {rows.map(row => (
+        <div className="ft-row" key={row.id}>
+          <input className="ft-input" placeholder={keyPlaceholder} value={row.key} onChange={e => onUpdate(row.id, 'key', e.target.value)} />
+          <input className="ft-input" placeholder={valuePlaceholder} value={row.value} onChange={e => onUpdate(row.id, 'value', e.target.value)} />
+          <button className="ft-del" onClick={() => onRemove(row.id)} disabled={rows.length <= minRows}>×</button>
+        </div>
+      ))}
+      <button className="ft-add" onClick={onAdd}>+ Add Row</button>
+    </div>
+  );
+}
+
+// ─── All-runs response list ───────────────────────────────────────────────────
+
+function ResponsesView({ items }: { items: Array<{ result: RequestResult; vuIdx: number; runIdx: number }> }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const errors = items.filter(it => it.result.error).length;
+  return (
+    <div className="responses-list">
+      {errors > 0 && (
+        <div className="resp-summary-err">{errors} error{errors > 1 ? 's' : ''} out of {items.length} responses</div>
+      )}
+      <div className="resp-table-head">
+        <span>VU</span><span>Run</span><span>Status</span><span>Total</span><span>TTFB</span><span>Size</span><span />
+      </div>
+      {items.map((item, i) => {
+        const r = item.result;
+        const isExp = expanded === i;
+        const sc = r.statusCode ?? 0;
+        return (
+          <div key={i} className="resp-item">
+            <div className={`resp-row ${isExp ? 'resp-row-open' : ''}`} onClick={() => setExpanded(isExp ? null : i)}>
+              <span className="resp-vu-chip">VU{item.vuIdx + 1}</span>
+              <span className="resp-run-chip">#{item.runIdx + 1}</span>
+              {r.error
+                ? <span className="status-badge s-err" style={{ fontSize: 11, padding: '1px 6px' }}>ERR</span>
+                : <span className={`status-badge ${statusClass(sc)}`} style={{ fontSize: 11, padding: '1px 6px' }}>{sc}</span>}
+              <span className="resp-num">{r.error ? '—' : `${r.timing.total}ms`}</span>
+              <span className="resp-num">{r.error ? '—' : `${r.timing.ttfb}ms`}</span>
+              <span className="resp-num">{r.error ? '—' : formatBytes(r.bodySize)}</span>
+              <span className="resp-chev">{isExp ? '▾' : '▸'}</span>
+            </div>
+            {isExp && (
+              <div className="resp-expand">
+                {r.error
+                  ? <div className="error-box" style={{ margin: 0 }}><strong>Error</strong>{r.error}</div>
+                  : <pre className="resp-body-pre">{r.bodyFormatted || r.body || '(empty)'}</pre>}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── CMD curl sanitizer ───────────────────────────────────────────────────────
 
 function sanitizeCmdCurl(input: string): string {
@@ -374,6 +573,13 @@ function sanitizeCmdCurl(input: string): string {
 function isUrlMode(curl: string) {
   const t = curl.trim();
   return /^https?:\/\//i.test(t) && !t.toLowerCase().startsWith('curl');
+}
+
+function looksLikeBareUrl(curl: string): boolean {
+  const t = curl.trim();
+  if (!t || /^https?:\/\//i.test(t) || t.toLowerCase().startsWith('curl')) return false;
+  return /^localhost(:\d+)?(\/|$)/.test(t) ||
+    /^[a-zA-Z0-9][\w.-]*\.[a-zA-Z]{2,}(:\d+)?(\/\S*)?$/.test(t);
 }
 
 // ─── Auth panel ───────────────────────────────────────────────────────────────
@@ -501,12 +707,13 @@ function SuiteResultsView({ suiteResults, onDownload }: { suiteResults: SuiteReq
           </div>
 
           <div className="tabs">
-            {(['timing', ...(hasStats ? ['stats'] : []), 'response', 'body', 'request'] as Tab[]).map(tab => (
+            {(['timing', ...(hasStats ? ['stats'] : []), 'runs', 'response', 'body', 'request'] as Tab[]).map(tab => (
               <div key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
                 {tab === 'timing' && 'Timing'}
                 {tab === 'stats' && <>Stats <span className="cnt">{sr.results.length}</span></>}
+                {tab === 'runs' && <>Responses <span className="cnt">{sr.items.length}</span></>}
                 {tab === 'response' && <>Headers <span className="cnt">{hdrCount}</span></>}
-                {tab === 'body' && 'Body'}
+                {tab === 'body' && 'Response'}
                 {tab === 'request' && 'Request'}
               </div>
             ))}
@@ -517,6 +724,7 @@ function SuiteResultsView({ suiteResults, onDownload }: { suiteResults: SuiteReq
             {hasStats && sr.stats && (
               <div className={`tab-content ${activeTab === 'stats' ? 'active' : ''}`}><StatsView stats={sr.stats} results={sr.results} /></div>
             )}
+            <div className={`tab-content ${activeTab === 'runs' ? 'active' : ''}`}><ResponsesView items={sr.items} /></div>
             <div className={`tab-content ${activeTab === 'response' ? 'active' : ''}`}><HeadersView headers={result.headers} /></div>
             <div className={`tab-content ${activeTab === 'body' ? 'active' : ''}`}><BodyView result={result} /></div>
             <div className={`tab-content ${activeTab === 'request' ? 'active' : ''}`}>{sr.parsed && <RequestView parsed={sr.parsed} />}</div>
@@ -524,19 +732,70 @@ function SuiteResultsView({ suiteResults, onDownload }: { suiteResults: SuiteReq
         </>
       ) : (
         <div style={{ padding: 20 }}>
-          <div className="error-box">
-            <strong>Request Failed</strong>{result?.error ?? 'No result received'}
-          </div>
+          <div className="error-box"><strong>Request Failed</strong>{result?.error ?? 'No result received'}</div>
+          {sr.items.length > 1 && (
+            <div style={{ marginTop: 16 }}>
+              <div className="section-subheader" style={{ marginBottom: 8 }}>All Responses</div>
+              <ResponsesView items={sr.items} />
+            </div>
+          )}
         </div>
       )}
     </>
   );
 }
 
+// ─── History panel ───────────────────────────────────────────────────────────
+
+function HistoryPanel({ history, onRestore, onClear }: {
+  history: HistoryEntry[];
+  onRestore: (e: HistoryEntry) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="panel-section">
+      <div className="ps-header" style={{ cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
+        <span className="ps-title">History</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {history.length > 0 && <span className="hist-count">{history.length}</span>}
+          <span style={{ color: 'var(--mu)', fontSize: 12, lineHeight: 1 }}>{open ? '▾' : '▸'}</span>
+        </div>
+      </div>
+      {open && (
+        history.length === 0
+          ? <div className="hist-empty">No history yet — run a request to record it</div>
+          : <div className="hist-list">
+              {history.map(entry => {
+                const label = entry.requests
+                  .map(r => r.name || truncate(r.curl.replace(/^curl\s+/i, '').trim(), 38))
+                  .join(' · ');
+                return (
+                  <div className="hist-item" key={entry.id}>
+                    <div className="hist-meta">
+                      <span className="hist-time">{formatRelTime(entry.timestamp)}</span>
+                      <span className="hist-badge">{entry.requests.length} req{entry.requests.length > 1 ? 's' : ''}</span>
+                      {(entry.config.vus > 1 || entry.config.runs > 1) && (
+                        <span className="hist-badge">{entry.config.vus}VU·{entry.config.runs}r</span>
+                      )}
+                      <button className="hist-load" onClick={() => onRestore(entry)}>Load</button>
+                    </div>
+                    <div className="hist-label">{label}</div>
+                  </div>
+                );
+              })}
+              <button className="hist-clear" onClick={onClear}>Clear history</button>
+            </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [requests, setRequests] = useState<RequestEntry[]>([{ id: '1', name: '', curl: '', method: 'GET', body: '', contentType: '' }]);
+  const [requests, setRequests] = useState<RequestEntry[]>([{ id: '1', name: '', curl: '', method: 'GET', body: '', contentType: '', formRows: defaultFormRows(), headerRows: defaultFormRows() }]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [auth, setAuth] = useState<AuthConfig>({ type: 'none' });
   const [runs, setRuns] = useState(1);
   const [vus, setVus] = useState(1);
@@ -548,6 +807,9 @@ export default function Home() {
   const [liveItems, setLiveItems] = useState<LiveItem[]>([]);
   const [liveStatus, setLiveStatus] = useState('');
   const [liveSort, setLiveSort] = useState<'asc' | 'desc'>('desc');
+  const [isPaused, setIsPaused] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const pauseCtrlRef = useRef<{ promise: Promise<void> | null; resolve: (() => void) | null }>({ promise: null, resolve: null });
 
   const validRequests = requests.filter(r => r.curl.trim());
   const canRun = !loading && validRequests.length > 0;
@@ -560,15 +822,24 @@ export default function Home() {
     setSuiteResults([]);
     setLiveItems([]);
     setLiveStatus('');
+    setIsPaused(false);
+    pauseCtrlRef.current = { promise: null, resolve: null };
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const res = await fetch('/api/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requests: validRequests.map(r => ({ id: r.id, name: r.name, curl: r.curl, method: r.method, body: r.body, contentType: r.contentType })),
+          requests: validRequests.map(r => ({
+            id: r.id, name: r.name, curl: r.curl, method: r.method, contentType: r.contentType,
+            body: r.contentType === 'application/x-www-form-urlencoded' ? serializeFormRows(r.formRows) : r.body,
+            customHeaders: isUrlMode(r.curl) ? r.headerRows.filter(h => h.key.trim()).map(h => `${h.key.trim()}: ${h.value}`) : undefined,
+          })),
           auth, runs, vus, thinkTime, timeout: timeoutSec,
         }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -587,6 +858,7 @@ export default function Home() {
       let seq = 0;
 
       while (true) {
+        if (pauseCtrlRef.current.promise) await pauseCtrlRef.current.promise;
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
@@ -629,13 +901,38 @@ export default function Home() {
           } catch { /* malformed line */ }
         }
       }
+      if (completedSuite.length > 0) {
+        const entry: HistoryEntry = {
+          id: `h${Date.now()}`,
+          timestamp: Date.now(),
+          requests: validRequests,
+          config: { runs, vus, thinkTime, timeoutSec },
+        };
+        setHistory(prev => {
+          const next = [entry, ...prev].slice(0, MAX_HISTORY);
+          saveStorage(HISTORY_KEY, next);
+          return next;
+        });
+      }
     } catch (err) {
-      setError((err as Error).message);
+      if ((err as DOMException).name !== 'AbortError') setError((err as Error).message);
     } finally {
       setLoading(false);
+      setIsPaused(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requests, auth, runs, vus, thinkTime, timeoutSec, canRun]);
+
+  useEffect(() => {
+    const saved = loadStorage<RequestEntry[]>(REQUESTS_KEY, []);
+    if (saved.length > 0) {
+      setRequests(saved.map(r => ({ ...r, formRows: r.formRows ?? defaultFormRows(), headerRows: r.headerRows ?? defaultFormRows() })));
+    }
+    setHistory(loadStorage<HistoryEntry[]>(HISTORY_KEY, []));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { saveStorage(REQUESTS_KEY, requests); }, [requests]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runTest(); };
@@ -643,9 +940,9 @@ export default function Home() {
     return () => document.removeEventListener('keydown', handler);
   }, [runTest]);
 
-  const addRequest = () => setRequests(p => [...p, { id: Date.now().toString(), name: '', curl: '', method: 'GET', body: '', contentType: '' }]);
+  const addRequest = () => setRequests(p => [...p, { id: Date.now().toString(), name: '', curl: '', method: 'GET', body: '', contentType: '', formRows: defaultFormRows(), headerRows: defaultFormRows() }]);
   const removeRequest = (id: string) => setRequests(p => p.filter(r => r.id !== id));
-  const updateRequest = (id: string, field: keyof RequestEntry, value: string) =>
+  const updateRequest = (id: string, field: 'name' | 'curl' | 'method' | 'body' | 'contentType', value: string) =>
     setRequests(p => p.map(r => {
       if (r.id !== id) return r;
       const updated = { ...r, [field]: field === 'curl' ? sanitizeCmdCurl(value) : value };
@@ -654,10 +951,63 @@ export default function Home() {
       }
       return updated;
     }));
+  const addFormRow      = (reqId: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, formRows: [...r.formRows, { id: Date.now().toString(), key: '', value: '' }] }));
+  const removeFormRow   = (reqId: string, rowId: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, formRows: r.formRows.filter(row => row.id !== rowId) }));
+  const updateFormRow   = (reqId: string, rowId: string, field: 'key' | 'value', val: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, formRows: r.formRows.map(row => row.id !== rowId ? row : { ...row, [field]: val }) }));
+  const addHeaderRow    = (reqId: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, headerRows: [...r.headerRows, { id: Date.now().toString(), key: '', value: '' }] }));
+  const removeHeaderRow = (reqId: string, rowId: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, headerRows: r.headerRows.filter(row => row.id !== rowId) }));
+  const updateHeaderRow = (reqId: string, rowId: string, field: 'key' | 'value', val: string) => setRequests(p => p.map(r => r.id !== reqId ? r : { ...r, headerRows: r.headerRows.map(row => row.id !== rowId ? row : { ...row, [field]: val }) }));
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const imported = await importRequestsFromExcel(file);
+      if (imported.length > 0) {
+        setRequests(prev => {
+          const isEmpty = prev.length === 1 && !prev[0].curl.trim() && !prev[0].name.trim();
+          return isEmpty ? imported : [...prev, ...imported];
+        });
+      }
+    } catch { setError('Failed to import — check the Excel format matches the sample.'); }
+    e.target.value = '';
+  };
 
   const handleDownload = (format: 'csv' | 'json') => {
     if (format === 'csv') downloadCSV(suiteResults);
     else downloadJSON(suiteResults, { runs, vus, thinkTime, timeoutSec, auth: { type: auth.type } });
+  };
+
+  const restoreHistory = (entry: HistoryEntry) => {
+    setRequests(entry.requests);
+    setRuns(entry.config.runs);
+    setVus(entry.config.vus);
+    setThinkTime(entry.config.thinkTime);
+    setTimeoutSec(entry.config.timeoutSec);
+  };
+  const clearHistory = () => { setHistory([]); saveStorage(HISTORY_KEY, []); };
+  const newSession = () => {
+    setRequests([{ id: Date.now().toString(), name: '', curl: '', method: 'GET', body: '', contentType: '', formRows: defaultFormRows(), headerRows: defaultFormRows() }]);
+    setSuiteResults([]);
+    setError(null);
+  };
+
+  const handlePause = () => {
+    setIsPaused(true);
+    pauseCtrlRef.current.promise = new Promise<void>(resolve => { pauseCtrlRef.current.resolve = resolve; });
+  };
+  const handleResume = () => {
+    setIsPaused(false);
+    pauseCtrlRef.current.resolve?.();
+    pauseCtrlRef.current.resolve = null;
+    pauseCtrlRef.current.promise = null;
+  };
+  const handleStop = () => {
+    pauseCtrlRef.current.resolve?.();
+    pauseCtrlRef.current.resolve = null;
+    pauseCtrlRef.current.promise = null;
+    setIsPaused(false);
+    abortRef.current?.abort();
   };
 
   return (
@@ -675,7 +1025,16 @@ export default function Home() {
           <div className="panel-section">
             <div className="ps-header">
               <span className="ps-title">Requests</span>
-              <button className="ps-add-btn" onClick={addRequest}>+ Add</button>
+              <div className="req-actions">
+                <label className="icon-btn icon-btn-import" title="Import requests from Excel">
+                  ↑ Import
+                  <input type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImport} />
+                </label>
+                <button className="icon-btn icon-btn-export" title="Export requests to Excel" onClick={() => exportRequestsToExcel(requests)}>↓ Export</button>
+                <button className="icon-btn icon-btn-sample" title="Download sample Excel template" onClick={downloadSampleExcel}>Sample</button>
+                <button className="icon-btn icon-btn-new" title="Clear all and start a new session" onClick={newSession}>New</button>
+                <button className="ps-add-btn" onClick={addRequest}>+ Add</button>
+              </div>
             </div>
             <div className="req-list">
               {requests.map((req, i) => (
@@ -698,14 +1057,17 @@ export default function Home() {
                     value={req.curl}
                     onChange={e => updateRequest(req.id, 'curl', e.target.value)}
                   />
+                  {looksLikeBareUrl(req.curl) && (
+                    <div className="proto-hint">
+                      <span className="proto-hint-label">Add protocol?</span>
+                      <button className="proto-btn" onClick={() => updateRequest(req.id, 'curl', `https://${req.curl.trim()}`)}>https://</button>
+                      <button className="proto-btn proto-btn-http" onClick={() => updateRequest(req.id, 'curl', `http://${req.curl.trim()}`)}>http://</button>
+                    </div>
+                  )}
                   {isUrlMode(req.curl) && (
                     <div className="url-mode-panel">
                       <div className="url-mode-row">
-                        <select
-                          className="method-select"
-                          value={req.method}
-                          onChange={e => updateRequest(req.id, 'method', e.target.value)}
-                        >
+                        <select className="method-select" value={req.method} onChange={e => updateRequest(req.id, 'method', e.target.value)}>
                           <option>GET</option>
                           <option>POST</option>
                           <option>PUT</option>
@@ -714,28 +1076,46 @@ export default function Home() {
                           <option>HEAD</option>
                           <option>OPTIONS</option>
                         </select>
-                        <select
-                          className="ct-select"
-                          value={req.contentType}
-                          onChange={e => updateRequest(req.id, 'contentType', e.target.value)}
-                        >
+                        <select className="ct-select" value={req.contentType} onChange={e => updateRequest(req.id, 'contentType', e.target.value)}>
                           <option value="">No Body</option>
                           <option value="application/json">JSON</option>
                           <option value="application/x-www-form-urlencoded">Form</option>
                           <option value="text/plain">Raw</option>
                         </select>
                       </div>
-                      {req.contentType && (
-                        <textarea
-                          className="req-body-input"
-                          placeholder={
-                            req.contentType === 'application/json' ? '{"key": "value"}'
-                            : req.contentType === 'application/x-www-form-urlencoded' ? 'key=value&key2=value2'
-                            : 'Body...'
-                          }
-                          value={req.body}
-                          onChange={e => updateRequest(req.id, 'body', e.target.value)}
+                      <div className="url-subsection">
+                        <span className="url-sub-label">Headers</span>
+                        <FormTable
+                          rows={req.headerRows}
+                          keyPlaceholder="Header-Name"
+                          valuePlaceholder="value"
+                          minRows={0}
+                          onAdd={() => addHeaderRow(req.id)}
+                          onRemove={rowId => removeHeaderRow(req.id, rowId)}
+                          onUpdate={(rowId, field, val) => updateHeaderRow(req.id, rowId, field, val)}
                         />
+                      </div>
+                      {req.contentType === 'application/x-www-form-urlencoded' && (
+                        <div className="url-subsection">
+                          <span className="url-sub-label">Form Data</span>
+                          <FormTable
+                            rows={req.formRows}
+                            onAdd={() => addFormRow(req.id)}
+                            onRemove={rowId => removeFormRow(req.id, rowId)}
+                            onUpdate={(rowId, field, val) => updateFormRow(req.id, rowId, field, val)}
+                          />
+                        </div>
+                      )}
+                      {req.contentType && req.contentType !== 'application/x-www-form-urlencoded' && (
+                        <div className="url-subsection">
+                          <span className="url-sub-label">Body</span>
+                          <textarea
+                            className="req-body-input"
+                            placeholder={req.contentType === 'application/json' ? '{"key": "value"}' : 'Body...'}
+                            value={req.body}
+                            onChange={e => updateRequest(req.id, 'body', e.target.value)}
+                          />
+                        </div>
                       )}
                     </div>
                   )}
@@ -755,21 +1135,21 @@ export default function Home() {
             <div className="ps-header"><span className="ps-title">Options</span></div>
             <div className="row">
               <div className="field">
-                <label className="field-label">Runs <span className="field-hint">per VU</span></label>
+                <label className="field-label">Runs <span className="field-hint">per user</span></label>
                 <input type="number" value={runs} min={1} onChange={e => setRuns(Math.max(1, parseInt(e.target.value) || 1))} />
               </div>
               <div className="field">
-                <label className="field-label">VUs <span className="field-hint">concurrent</span></label>
+                <label className="field-label">Users <span className="field-hint">concurrent</span></label>
                 <input type="number" value={vus} min={1} onChange={e => setVus(Math.max(1, parseInt(e.target.value) || 1))} />
               </div>
             </div>
             <div className="row" style={{ marginTop: 10 }}>
               <div className="field">
-                <label className="field-label">Think Time <span className="field-hint">ms</span></label>
+                <label className="field-label">Think Time <span className="field-hint">ms between</span></label>
                 <input type="number" value={thinkTime} min={0} step={100} onChange={e => setThinkTime(Math.max(0, parseInt(e.target.value) || 0))} />
               </div>
               <div className="field">
-                <label className="field-label">Timeout</label>
+                <label className="field-label">Timeout <span className="field-hint">per request</span></label>
                 <select value={timeoutSec} onChange={e => setTimeoutSec(parseInt(e.target.value))}>
                   <option value="5">5s</option>
                   <option value="10">10s</option>
@@ -782,22 +1162,40 @@ export default function Home() {
             </div>
             {(validRequests.length > 1 || vus > 1 || runs > 1) && (
               <div className="load-preview" style={{ marginTop: 10 }}>
-                {validRequests.length} req{validRequests.length > 1 ? 's' : ''} × {vus} VU{vus > 1 ? 's' : ''} × {runs} run{runs > 1 ? 's' : ''} = <strong>{totalLive}</strong> total
+                {validRequests.length} req{validRequests.length > 1 ? 's' : ''} × {vus} user{vus > 1 ? 's' : ''} × {runs} run{runs > 1 ? 's' : ''} = <strong>{totalLive}</strong> total
                 {thinkTime > 0 && ` · ${thinkTime}ms think`}
               </div>
             )}
           </div>
 
           <button className="btn-run" onClick={runTest} disabled={!canRun}>
-            {loading && <div className="spinner" />}
+            {loading && !isPaused && <div className="spinner" />}
+            {loading && isPaused && <span style={{ fontSize: 14, lineHeight: 1 }}>⏸</span>}
             {loading
-              ? (liveStatus ? `Testing ${liveStatus}` : 'Connecting…')
+              ? (isPaused ? 'Paused' : liveStatus ? `Testing ${liveStatus}` : 'Connecting…')
               : `▶ Run${validRequests.length > 1 ? ' All' : ''}`}
           </button>
+          {loading && (
+            <div className="run-controls">
+              <button className={`ctrl-btn ${isPaused ? 'ctrl-resume' : 'ctrl-pause'}`} onClick={isPaused ? handleResume : handlePause}>
+                {isPaused ? (
+                  <><svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor"><path d="M2 1.5L9.5 5.5L2 10V1.5Z"/></svg>Resume</>
+                ) : (
+                  <><svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor"><rect x="1" y="1" width="3.5" height="9" rx="0.75"/><rect x="6.5" y="1" width="3.5" height="9" rx="0.75"/></svg>Pause</>
+                )}
+              </button>
+              <button className="ctrl-btn ctrl-stop" onClick={handleStop}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5"/></svg>
+                Stop
+              </button>
+            </div>
+          )}
 
           <div className="hint-box">
             Accepts <code>curl</code> commands or plain URLs · CMD <code>^</code> escaping auto-cleaned · Auth applied globally
           </div>
+
+          <HistoryPanel history={history} onRestore={restoreHistory} onClear={clearHistory} />
         </div>
 
         {/* ── Right panel ── */}

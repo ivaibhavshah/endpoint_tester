@@ -5,12 +5,15 @@ import type { RequestResult, AuthConfig } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
-function normalizeInput(input: string, method?: string, body?: string, contentType?: string): string {
+function normalizeInput(input: string, method?: string, body?: string, contentType?: string, customHeaders?: string[]): string {
   const t = input.trim();
   if (/^https?:\/\//i.test(t) && !t.includes(' ')) {
     const m = (method || 'GET').toUpperCase();
     let cmd = `curl "${t}"`;
     if (m !== 'GET') cmd += ` -X ${m}`;
+    if (customHeaders?.length) {
+      for (const h of customHeaders) cmd += ` -H "${h.replace(/"/g, '\\"')}"`;
+    }
     if (contentType) cmd += ` -H "Content-Type: ${contentType}"`;
     if (body?.trim()) {
       const escaped = body.replace(/\\/g, '\\\\').replace(/'/g, "'\\''");
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    let requestList: Array<{ id: string; name: string; curl: string; method?: string; body?: string; contentType?: string }>;
+    let requestList: Array<{ id: string; name: string; curl: string; method?: string; body?: string; contentType?: string; customHeaders?: string[] }>;
     if (Array.isArray(body.requests) && body.requests.length > 0) {
       requestList = body.requests;
     } else if (body.curlCommand) {
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest) {
         try {
           for (let reqIdx = 0; reqIdx < requestList.length; reqIdx++) {
             const entry = requestList[reqIdx];
-            const normalized = normalizeInput(entry.curl, entry.method, entry.body, entry.contentType);
+            const normalized = normalizeInput(entry.curl, entry.method, entry.body, entry.contentType, entry.customHeaders);
 
             if (!normalized) {
               enqueue({ type: 'request_error', requestIdx: reqIdx, message: 'Empty request' });
