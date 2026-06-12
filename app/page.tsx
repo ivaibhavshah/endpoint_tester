@@ -29,6 +29,13 @@ function highlightJson(str: string) {
     .replace(/:\s*(true|false)/g, ': <span class="j-bool">$1</span>')
     .replace(/:\s*(null)/g, ': <span class="j-null">$1</span>');
 }
+const msToS = (ms: number) => `${(ms / 1000).toFixed(3)}s`;
+function cleanError(msg: string | null | undefined): string {
+  if (!msg) return 'An unknown error occurred — check the URL and try again';
+  const t = msg.trim();
+  if (!t || t.endsWith(':') || t === 'Request error') return 'Request failed — check the URL and network connectivity';
+  return t;
+}
 function statusClass(sc: number) {
   if (sc >= 500) return 's-5xx';
   if (sc >= 400) return 's-4xx';
@@ -145,6 +152,7 @@ async function exportRequestsToExcel(requests: RequestEntry[]) {
 }
 
 async function downloadSampleExcel() {
+  try {
   const XLSX = (await import('xlsx')).default;
   const sample = [
     { Name: 'Get Users', Input: 'https://api.example.com/users', Method: 'GET', ContentType: '', Body: '', Headers: 'Authorization: Bearer my-token' },
@@ -158,6 +166,7 @@ async function downloadSampleExcel() {
   XLSX.utils.book_append_sheet(wb, ws, 'Requests');
   const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
   triggerDownload(new Blob([buf], { type: EXCEL_MIME }), 'sample-requests.xlsx');
+  } catch (err) { console.error('Sample download failed:', err); alert('Failed to generate sample file. Please try again.'); }
 }
 
 async function importRequestsFromExcel(file: File): Promise<RequestEntry[]> {
@@ -241,7 +250,7 @@ function TimingView({ result }: { result: RequestResult }) {
         {cards.map(c => (
           <div className="timing-card" key={c.label}>
             <div className="t-label">{c.label}</div>
-            <div className="t-val" style={{ color: c.color }}>{c.val}<span className="t-unit">ms</span></div>
+            <div className="t-val" style={{ color: c.color }}><span title={msToS(c.val)} className="ms-tip">{c.val}</span><span className="t-unit">ms</span></div>
           </div>
         ))}
       </div>
@@ -253,7 +262,7 @@ function TimingView({ result }: { result: RequestResult }) {
             <div className="wf-row" key={p.label}>
               <div className="wf-label">{p.label}</div>
               <div className="wf-track"><div className={`wf-bar ${p.cls}`} style={{ width: `${pct}%` }} /></div>
-              <div className="wf-val">{p.val}<span className="wf-unit"> ms</span></div>
+              <div className="wf-val"><span title={msToS(p.val)} className="ms-tip">{p.val}</span><span className="wf-unit"> ms</span></div>
             </div>
           );
         })}
@@ -276,10 +285,10 @@ function StatsView({ stats, results }: { stats: AggregateStats; results: Request
   const StatCard = ({ title, s }: { title: string; s: { min: number; max: number; avg: number; p95: number } }) => (
     <div className="stats-card">
       <h3>{title}</h3>
-      <div className="stats-row"><span className="s-label">Min</span><span className="s-val" style={{ color: '#3fb950' }}>{s.min} ms</span></div>
-      <div className="stats-row"><span className="s-label">Max</span><span className="s-val" style={{ color: '#f85149' }}>{s.max} ms</span></div>
-      <div className="stats-row"><span className="s-label">Avg</span><span className="s-val">{s.avg} ms</span></div>
-      <div className="stats-row"><span className="s-label">P95</span><span className="s-val" style={{ color: '#ffa657' }}>{s.p95} ms</span></div>
+      <div className="stats-row"><span className="s-label">Min</span><span className="s-val" style={{ color: '#3fb950' }}><span title={msToS(s.min)} className="ms-tip">{s.min}</span> ms</span></div>
+      <div className="stats-row"><span className="s-label">Max</span><span className="s-val" style={{ color: '#f85149' }}><span title={msToS(s.max)} className="ms-tip">{s.max}</span> ms</span></div>
+      <div className="stats-row"><span className="s-label">Avg</span><span className="s-val"><span title={msToS(s.avg)} className="ms-tip">{s.avg}</span> ms</span></div>
+      <div className="stats-row"><span className="s-label">P95</span><span className="s-val" style={{ color: '#ffa657' }}><span title={msToS(s.p95)} className="ms-tip">{s.p95}</span> ms</span></div>
     </div>
   );
   return (
@@ -539,8 +548,8 @@ function ResponsesView({ items }: { items: Array<{ result: RequestResult; vuIdx:
               {r.error
                 ? <span className="status-badge s-err" style={{ fontSize: 11, padding: '1px 6px' }}>ERR</span>
                 : <span className={`status-badge ${statusClass(sc)}`} style={{ fontSize: 11, padding: '1px 6px' }}>{sc}</span>}
-              <span className="resp-num">{r.error ? '—' : `${r.timing.total}ms`}</span>
-              <span className="resp-num">{r.error ? '—' : `${r.timing.ttfb}ms`}</span>
+              <span className="resp-num">{r.error ? '—' : <span title={msToS(r.timing.total)} className="ms-tip">{r.timing.total}ms</span>}</span>
+              <span className="resp-num">{r.error ? '—' : <span title={msToS(r.timing.ttfb)} className="ms-tip">{r.timing.ttfb}ms</span>}</span>
               <span className="resp-num">{r.error ? '—' : formatBytes(r.bodySize)}</span>
               <span className="resp-chev">{isExp ? '▾' : '▸'}</span>
             </div>
@@ -731,8 +740,8 @@ function SuiteResultsView({ suiteResults, onDownload }: { suiteResults: SuiteReq
           </div>
         </>
       ) : (
-        <div style={{ padding: 20 }}>
-          <div className="error-box"><strong>Request Failed</strong>{result?.error ?? 'No result received'}</div>
+        <div className="panel-error-scroll">
+          <div className="error-box"><strong>Request Failed</strong>{cleanError(result?.error)}</div>
           {sr.items.length > 1 && (
             <div style={{ marginTop: 16 }}>
               <div className="section-subheader" style={{ marginBottom: 8 }}>All Responses</div>
@@ -812,7 +821,7 @@ export default function Home() {
   const pauseCtrlRef = useRef<{ promise: Promise<void> | null; resolve: (() => void) | null }>({ promise: null, resolve: null });
 
   const validRequests = requests.filter(r => r.curl.trim());
-  const canRun = !loading && validRequests.length > 0;
+  const canRun = !loading && validRequests.length > 0 && runs >= 1 && vus >= 1;
   const totalLive = vus * runs * validRequests.length;
 
   const runTest = useCallback(async () => {
@@ -1136,11 +1145,15 @@ export default function Home() {
             <div className="row">
               <div className="field">
                 <label className="field-label">Runs <span className="field-hint">per user</span></label>
-                <input type="number" value={runs} min={1} onChange={e => setRuns(Math.max(1, parseInt(e.target.value) || 1))} />
+                <input type="number" value={runs || ''} min={1}
+                  onChange={e => setRuns(parseInt(e.target.value) || 0)}
+                  onBlur={() => setRuns(r => Math.max(1, r || 1))} />
               </div>
               <div className="field">
                 <label className="field-label">Users <span className="field-hint">concurrent</span></label>
-                <input type="number" value={vus} min={1} onChange={e => setVus(Math.max(1, parseInt(e.target.value) || 1))} />
+                <input type="number" value={vus || ''} min={1}
+                  onChange={e => setVus(parseInt(e.target.value) || 0)}
+                  onBlur={() => setVus(v => Math.max(1, v || 1))} />
               </div>
             </div>
             <div className="row" style={{ marginTop: 10 }}>
@@ -1229,7 +1242,7 @@ export default function Home() {
 
           {!loading && error && suiteResults.length === 0 && (
             <div style={{ padding: 20 }}>
-              <div className="error-box"><strong>Error</strong>{error}</div>
+              <div className="error-box"><strong>Error</strong>{cleanError(error)}</div>
             </div>
           )}
 
